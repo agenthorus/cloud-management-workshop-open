@@ -1,0 +1,86 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: win2k22-mina-test # Replace with your v_vm_name
+  namespace: demo # Replace with your v_vm_namespace
+  labels:
+    app: win2k22-mina-test # Replace with your v_vm_name
+    vm.kubevirt.io/template: win2k22-final-soe-template
+    vm.kubevirt.io/template.namespace: openshift-virtualization-os-images
+spec:
+  instancetype:
+    name: u1.medium
+  preference:
+    name: windows.2k22
+  runStrategy: RerunOnFailure
+  template:
+    spec:
+      accessCredentials:
+        - passwordSecret:
+            secretName: win-admin-secret
+            propagationMethod:
+              configDrive: {}
+      domain:
+        devices:
+          disks:
+            - name: rootdisk
+              bootOrder: 1
+              disk:
+                bus: sata
+            - name: windows-drivers-disk
+              cdrom:
+                bus: sata
+          inputs:
+            - name: tablet
+              type: tablet
+              bus: usb
+          interfaces:
+            - name: default
+              model: e1000e
+              masquerade: {}
+        features:
+          acpi: {}
+          apic: {}
+          hyperv:
+            frequencies: {}
+            ipi: {}
+            reenlightenment: {}
+            relaxed: {}
+            reset: {}
+            runtime: {}
+            spinlocks:
+              spinlocks: 8191
+            synic: {}
+            synictimer:
+              direct: {}
+            tlbflush: {}
+            vapic: {}
+            vpindex: {}
+          smm:
+            enabled: true
+        firmware:
+          bootloader:
+            bios: {}
+        clock:
+          utc: {}
+          timer:
+            hpet:
+              present: false
+            hyperv: {}
+            pit:
+              tickPolicy: delay
+            rtc:
+              tickPolicy: catchup
+        machine: # <-- CORRECTED POSITION: Directly under 'domain'
+          type: pc-q35-rhel9.4.0
+      networks: # <-- CORRECTED POSITION: Directly under 'spec.template.spec'
+        - name: default
+          pod: {}
+      volumes: # <-- CORRECTED POSITION: Directly under 'spec.template.spec'
+        - name: rootdisk
+          persistentVolumeClaim:
+            claimName: win2k22-wd-soe-template
+        - name: windows-drivers-disk
+          containerDisk:
+            image: kubevirt/virtio-container-disk
+

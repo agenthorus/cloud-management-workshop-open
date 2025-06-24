@@ -1,0 +1,28 @@
+---
+    - name: Get EC2 instances with matching tags
+      amazon.aws.ec2_instance_info:
+        region: "{{ ec2_region }}"
+        filters:
+          "tag:workshop_os_type": "{{ ec2_name_prefix }}-{{ workshop_type }}-{{ aws_host_os }}-{{ student_name }}"
+          "tag:OS": "win2022"
+      register: ec2_info
+
+    - name: Set instance IDs to terminate
+      set_fact:
+        target_instance_ids: "{{ ec2_info.instances | map(attribute='instance_id') | list }}"
+
+    - name: Show matched instance IDs
+      debug:
+        msg: "Instances to be terminated: {{ target_instance_ids }}"
+
+    - name: Terminate matched EC2 instances
+      amazon.aws.ec2_instance:
+        region: "{{ ec2_region }}"
+        instance_ids: "{{ target_instance_ids }}"
+        state: absent
+      when: target_instance_ids | length > 0
+
+    - name: Notify when no matching instances found
+      debug:
+        msg: "No matching EC2 instances found."
+      when: target_instance_ids | length == 0

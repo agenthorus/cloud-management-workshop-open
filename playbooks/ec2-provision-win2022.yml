@@ -1,0 +1,31 @@
+---
+- name: Create resources and instances in AWS
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+  collections:
+    - amazon.aws
+    - community.windows
+
+  vars:
+    aws_host_os: "win2022"
+    aws_os_type: "Windows"
+    aws_vm_name: "windows-student"
+
+  vars_files:
+    - ../vault/secrets.yml
+
+  tasks:
+
+    - name: Include default variables for provisioning
+      ansible.builtin.include_vars: ../vars/aws.yml
+
+    ## find AMI dynamically
+    - ansible.builtin.include_role:
+        name: ../roles/aws_ami_find
+
+    ## Instance creation
+    - ansible.builtin.include_role:
+        name: ../roles/aws_ec2_instance
+        tasks_from: ec2_provision_win.yml

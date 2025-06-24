@@ -1,0 +1,192 @@
+---
+    - name: Create a Windows VM using existing PVC
+      redhat.openshift_virtualization.kubevirt_vm:
+        host: "{{ v_ocp_cluster_api }}"
+        validate_certs: false
+        state: present
+        name: win2k22-mina-test
+        namespace: openshift-virtualization-os-images
+        labels:
+          app: win2k22-mina-test
+          vm.kubevirt.io/template: win2k22-final-soe-template
+          vm.kubevirt.io/template.namespace: openshift-virtualization-os-images
+        preference:
+          name: windows.2k22
+        instancetype:
+          name: u1.medium
+        spec:
+          runStrategy: RerunOnFailure
+          accessCredentials:
+            - passwordSecret:
+                propagationMethod:
+                  configDrive: {}
+                source:
+                  secret:
+                    secretName: win-admin-secret
+          domain:
+            devices:
+              disks:
+                - name: rootdisk
+                  bootOrder: 1
+                  disk:
+                    bus: sata
+                - name: windows-drivers-disk
+                  cdrom:
+                    bus: sata
+              inputs:
+                - name: tablet
+                  type: tablet
+                  bus: usb
+              interfaces:
+                - name: default
+                  model: e1000e
+                  masquerade: {}
+            features:
+              acpi: {}
+              apic: {}
+              hyperv:
+                frequencies: {}
+                ipi: {}
+                reenlightenment: {}
+                relaxed: {}
+                reset: {}
+                runtime: {}
+                spinlocks:
+                  spinlocks: 8191
+                synic: {}
+                synictimer:
+                  direct: {}
+                tlbflush: {}
+                vapic: {}
+                vpindex: {}
+              smm:
+                enabled: true
+            firmware:
+              bootloader:
+                bios: {}
+            clock:
+              utc: {}
+              timer:
+                hpet:
+                  present: false
+                hyperv: {}
+                pit:
+                  tickPolicy: delay
+                rtc:
+                  tickPolicy: catchup
+            machine:
+              type: pc-q35-rhel9.4.0
+          networks:
+            - name: default
+              pod: {}
+          volumes:
+            - name: rootdisk
+              persistentVolumeClaim:
+                claimName: win2k22-wd-soe-template
+            - name: windows-drivers-disk
+              containerDisk:
+                image: kubevirt/virtio-container-disk
+        wait: true
+        wait_timeout: 300
+
+
+    - name: Create Windows Server 2022 VM with DataVolume and WinRM access
+      redhat.openshift_virtualization.kubevirt_vm:
+        host: "{{ v_ocp_cluster_api }}"
+        validate_certs: false
+        state: present
+        name: "{{ v_vm_name }}"
+        namespace: "{{ v_vm_namespace }}"
+        labels:
+          app: "{{ v_vm_label }}"
+        instancetype:
+          name: "{{ v_vm_instancetype }}"
+        preference:
+          name: windows.2k22
+        data_volume_templates:
+          - metadata:
+              name: "{{ v_vm_name }}"
+            spec:
+              source:
+                pvc:
+                  name: "{{ v_vm_datastore }}"
+                  namespace: openshift-virtualization-os-images
+              storage:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: "{{ v_vm_os_disk_size }}Gi"
+        spec:
+          domain:
+            devices: {}  
+          accessCredentials:
+            - passwordSecret:
+                source:
+                  secret:
+                    secretName: win-admin-secret
+                propagationMethod:
+                  noCloud: {}
+          volumes:
+            - name: rootdisk
+              dataVolume:
+                name: "{{ v_vm_name }}"
+            - name: cloudinitdisk
+              cloudInitNoCloud:
+                userData: "{{ lookup('template', 'win_cloudinit_userdata.j2') }}"
+        wait: true
+        wait_timeout: 600
+
+    - pause:
+        seconds: 90
+
+    - name: Get the create VM information
+      redhat.openshift_virtualization.kubevirt_vmi_info:
+        host: "{{ v_ocp_cluster_api }}"
+        name: "{{ v_vm_name }}"
+        namespace: "{{ v_vm_namespace }}"
+        validate_certs: 'false'
+      register: v_created_vm
+
+    - debug:
+        var: v_created_vm.resources[0]
+
+    - name: Setting host facts
+      ansible.builtin.set_fact:
+        v_cpu_cores: "{{ item.status.currentCPUTopology.cores }}"
+        v_cpu_sockets: "{{ item.status.currentCPUTopology.sockets }}"
+        v_cpu_model: "{{ item.spec.domain.cpu.model }}"
+        v_memory_size: "{{ item.status.memory.guestRequested }}"
+        v_guesos_kernel: "{{ item.status.guestOSInfo.kernelRelease }}"
+        v_guesos_version: "{{ item.status.guestOSInfo.versionId }}"
+        v_guesos_name: "{{ item.status.guestOSInfo.prettyName }}"
+        v_net_mac: "{{ item.status.interfaces[0].mac }}"
+        v_net_ipaddr: "{{ item.status.interfaces[0].ipAddress }}"
+        v_vm_state: "{{ item.status.phase }}"
+        v_vm_arch: "{{ item.spec.architecture }}"
+        v_vm_uid: "{{ item.metadata.ownerReferences[0].uid }}"
+        v_vm_name: "{{ item.metadata.name }}"
+        v_vm_namespace: "{{ item.metadata.namespace }}"
+        v_vm_os_type: "{{ item.metadata.annotations['vm.kubevirt.io/os'] }}"
+      loop: "{{ v_created_vm.resources }}"
+
+    - name: Set Stats - Elevate to Workflow level
+      ansible.builtin.set_stats:
+        data:
+          v_cpu_cores: "{{ v_cpu_cores }}"
+          v_cpu_sockets: "{{ v_cpu_sockets }}"
+          v_cpu_model: "{{ v_cpu_model }}"
+          v_memory_size: "{{ v_memory_size }}"
+          v_guesos_kernel: "{{ v_guesos_kernel }}"
+          v_guesos_version: "{{ v_guesos_version }}"
+          v_guesos_name: "{{ v_guesos_name }}"
+          v_net_mac: "{{ v_net_mac }}"
+          v_net_ipaddr: "{{ v_net_ipaddr }}"
+          v_vm_state: "{{ v_vm_state }}"
+          v_vm_arch: "{{ v_vm_arch }}"
+          v_vm_uid: "{{ v_vm_uid }}"
+          v_vm_name: "{{ v_vm_name }}"
+          v_vm_namespace: "{{ v_vm_namespace }}"
+          v_vm_os_type: "{{ v_vm_os_type }}"
+        per_host: false
+

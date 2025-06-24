@@ -1,0 +1,45 @@
+download_url: https://console.redhat.com/api/automation-hub/v3/plugin/ansible/content/published/collections/artifacts/ansible-windows-3.1.0.tar.gz
+format_version: 1.0.0
+name: windows
+namespace: ansible
+server: https://console.redhat.com/api/automation-hub/content/published/
+signatures:
+- pubkey_fingerprint: 39B5D759361A97464C564A8FE1A4BD708A828AAD
+  pulp_created: '2025-05-27T07:47:31.981465Z'
+  signature: '-----BEGIN PGP SIGNATURE-----
+
+    Version: GnuPG v1
+
+
+    iQIcBAABCAAGBQJoNW4JAAoJEOGkvXCKgoqtHaoP/j5f92cMVgqN0dwLpNt3crl1
+
+    3ajQw5daXLaSzewgWx+HEDBbDXTGiP8XRipDitaopU5DiTTIBZ24tEEW0CijQX4M
+
+    8ac3BH/CHT0uRgKlraLXPrriHnRGxSGPjNZrT502yhSTJnjQDBUklAgG3VPfw+mz
+
+    /eJZgnV3tnN59wkXZqLvvodwpMAzugMtnVB6qfeCP60UWp3TVt0btae0yjVHe+VS
+
+    OW05AWuZKMcbNOelNqmzBkHpRmjMvPRx7UCmG9wtk1/mdakMgHXQM/NE5BGIJCzE
+
+    l6uXPVmS34K3iG3tThx3TY0Z5PrpUZ9s5dhTgRGIYsoH58YCHYVq5uVrrd1+s5/M
+
+    8tkBw5F1Th2wX7aVZhGYKLV8fPB/SgHsKDVoaO1+Z89hcsEpee0HzWSWPkJTjZnm
+
+    ycYFS4ZnSeb2GFZ6lRni8No51d89ey0tfljHWy2fceUmjN9Qf9ucq5IeYeIyuTiO
+
+    TBqEIb1RKFjObyJ5xBL7338HsNJ3KKB1xtdDFp+9yiQJpdgWsnDqmM2i0b5UIAHT
+
+    fgPJbOmThm5OXEdmtMwD1Tqti1uL+Y8YKvs8EW9B5UFntXwJYKJ02R81lXHjZp27
+
+    JfQze4ishDojyzxuoXgskqIoWr3gJZsPkJBMwJqeT/KVJcDzGChRxCa1ylKe98aT
+
+    O5+QKDVXq8gWq6UeOhG7
+
+    =XIVF
+
+    -----END PGP SIGNATURE-----
+
+    '
+  signing_service: null
+version: 3.1.0
+version_url: /api/automation-hub/content/published/v3/plugin/ansible/content/published/collections/index/ansible/windows/versions/3.1.0/

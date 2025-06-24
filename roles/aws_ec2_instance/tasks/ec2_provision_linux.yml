@@ -1,0 +1,116 @@
+---
+############################################################################
+######  This task is responsible to create a new ec2 instance in AWS  ######
+############################################################################
+- name: RHEL instance size list length
+  ansible.builtin.debug:
+    msg: "RHEL instance size list length: {{ ec2_info[aws_host_os].size | length }}"
+
+- name: Initialize/reset list count
+  ansible.builtin.set_fact:
+    list_count: "reset"
+
+- name: Increment list count
+  ansible.builtin.set_fact:
+    list_count: "{{ 0 | int if list_count == 'reset' else list_count | int + 1 }}"
+
+- ansible.builtin.debug:
+    msg: "list count: {{ list_count }}"
+
+- name: Create VM 
+  amazon.aws.ec2_instance:
+    state: running
+    key_name: "{{ ec2_name_prefix }}-key"
+    region: "{{ ec2_region }}"
+    vpc_subnet_id: "{{ ec2_vpc_subnet_id }}"
+    instance_type: "{{ ec2_info[aws_host_os].size }}"
+    security_group: "{{ ec2_security_group }}"
+    exact_count: "{{ v_instance_count }}"
+    filters:
+      instance-state-name: running
+#     "tag:Workshop_node1": "{{ ec2_name_prefix }}-node1-rhel"
+#     "tag:workshop_os_type": "{{ ec2_name_prefix }}-{{ workshop_type }}-{{ aws_host_os }}"
+      "tag:workshop_os_type": "{{ ec2_name_prefix }}-{{ workshop_type }}-{{ aws_host_os }}-{{ student_name }}"
+    network:
+      assign_public_ip: true
+    image_id: "{{ node_ami_ec2.image_id }}"
+    wait: "{{ ec2_wait }}"
+    user_data: |
+      #!/bin/bash
+      echo "Hello, World!" > /home/ec2-user/hello.txt
+      echo "ec2-user ALL=(ALL) ALL" > /etc/sudoers.d/90-cloud-init-users
+      echo "ec2-user:{{ ansible_password }}" | chpasswd
+    volumes:
+      - device_name: /dev/sda1
+        ebs:
+          volume_type: "{{ ec2_info[aws_host_os].disk_volume_type }}"
+          volume_size: "{{ ec2_info[aws_host_os].disk_space }}"
+          iops: "{{ ec2_info[aws_host_os].disk_iops }}"
+          throughput: "{{ ec2_info[aws_host_os].disk_throughput }}"
+          delete_on_termination: true
+    tags:
+#     Workshop_node1: "{{ ec2_name_prefix }}-node1-rhel"
+      Workshop: "{{ ec2_name_prefix }}"
+      workshop_os_type: "{{ ec2_name_prefix }}-{{ workshop_type }}-{{ aws_host_os }}-{{ student_name }}"
+      workshop_type: "{{ ec2_name_prefix }}-{{ workshop_type }}"
+      uuid: "{{ ec2_name_prefix }}"
+      guid: "{{ ec2_name_prefix }}"
+      AWS_USERNAME: "{{ aws_user }}"
+      owner: "{{ aws_user }}"
+      Info: "AWS_USERNAME that provisioned this-> {{ aws_user }}"
+      short_name: "node1"
+      username: "{{ ec2_info[aws_host_os].username }}"
+      ansible-workshops: "true"
+      OS: "{{ aws_host_os }}"
+  register: ec2
+  
+- name: Wait for the instance to be in running state
+  amazon.aws.ec2_instance_info:
+    region: "{{ ec2_region }}"
+    instance_ids: "{{ ec2.instance_ids }}"
+  register: ec2_info
+  until: ec2_info.instances[0].state.name == "running"
+  retries: 10
+  delay: 30
+
+- name: grab instance ids to tag node1
+  amazon.aws.ec2_instance_info:
+    region: "{{ ec2_region }}"
+    filters:
+      instance-state-name: running
+#      "tag:Workshop_node1": "{{ ec2_name_prefix }}-node1-rhel"
+      "tag:workshop_os_type": "{{ ec2_name_prefix }}-{{ workshop_type }}-{{ aws_host_os }}-{{ student_name }}"
+  register: node1_output
+
+- name: Ensure tags are present for node1
+  amazon.aws.ec2_tag:
+    region: "{{ ec2_region }}"
+    resource: "{{ item.1.instance_id }}"
+    state: present
+    tags:
+      Name: "{{ ec2_name_prefix }}-{{ aws_host_os }}-{{ student_name }}-{{ item.0 + 1 }}"
+      Index: "{{ item[0] }}"
+      Student: "{{ student_name }}"
+      launch_time: "{{ item.1.launch_time }}"
+      workshop_type: "{{ ec2_name_prefix }}-{{ workshop_type }}"
+      workshop_os_type: "{{ ec2_name_prefix }}-{{ workshop_type }}-{{ aws_host_os }}-{{ student_name }}"
+  with_indexed_items:
+    - "{{ node1_output.instances }}"
+  when: node1_output.instances|length > 0
+
+- name: Wait for SSH to become available
+  wait_for:
+    host: "{{ item.public_ip_address }}"
+    port: 22
+    delay: 10
+    timeout: 380
+    state: started
+  loop: "{{ node1_output.instances }}"
+  loop_control:
+    label: "{{ item.public_ip_address }}"
+
+- name: Set v_vm_name to list of public DNS names
+  ansible.builtin.set_stats:
+    data:
+      v_vm_name: "{{ node1_output.instances | map(attribute='public_dns_name') | list }}"
+

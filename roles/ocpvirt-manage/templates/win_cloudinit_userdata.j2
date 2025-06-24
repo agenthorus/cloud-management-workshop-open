@@ -1,0 +1,24 @@
+#ps1_sysnative
+# Disable .Net Optimization Service
+Get-ScheduledTask *ngen* | Disable-ScheduledTask
+
+# Disable Windows Auto Updates
+reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update" /v AUOptions /t REG_DWORD /d 1 /f
+net stop wuauserv
+net start wuauserv
+
+# Disable Windows Defender Monitoring
+Set-MpPreference -DisableRealtimeMonitoring $true
+
+# Enable WinRM
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/ansible/ansible-documentation/devel/examples/scripts/ConfigureRemotingForAnsible.ps1 -OutFile C:\ConfigureRemotingForAnsible.ps1
+C:\ConfigureRemotingForAnsible.ps1 -ForceNewSSLCert -EnableCredSSP
+
+# Add local user
+$Password = ConvertTo-SecureString {{ winrm_password }} -AsPlainText -Force
+New-LocalUser -Name "{{ winrm_username }}" -Description "Ansible Service Account" -Password $Password
+Add-LocalGroupMember -Group "Administrators" -Member "{{ winrm_username }}"
+
+# Rename computer
+Rename-Computer -NewName {{ v_vm_name }} -Force -Restart
+

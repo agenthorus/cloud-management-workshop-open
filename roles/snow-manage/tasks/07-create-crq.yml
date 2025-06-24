@@ -1,0 +1,21 @@
+---
+    - name: Create a new Change Request
+      servicenow.itsm.change_request:
+        type: "{{ v_change_type }}"
+        category: "{{ v_change_category }}"
+        risk: "{{ v_change_risk }}"
+        state: new
+        requested_by: "{{ v_change_requester }}"
+        short_description: "{{ v_change_short_description }}"
+        description: "{{ v_change_description }}"
+        priority: "{{ v_change_priority }}"
+        impact: "{{ v_change_impact }}"
+        other:
+          assignment_group: "{{ v_change_assignment_group }}"
+          start_date: "{{ v_change_start_date }}"
+          end_date: "{{ v_change_end_date }}"
+      register: create_crq
+
+
+    - debug:
+        msg: "Change Request Created : {{ create_crq.record.number }} "

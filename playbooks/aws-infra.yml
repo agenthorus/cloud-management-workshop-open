@@ -1,0 +1,25 @@
+---
+- name: Create resources and instances in AWS
+  hosts: localhost
+  connection: local
+  become: false
+  gather_facts: false
+  collections:
+    - amazon.aws
+
+  tasks:
+
+    - name: Include default variables for provisioning
+      ansible.builtin.include_vars: ../vars/aws.yml
+
+    - name: Include default vpc rules for provisioning
+      ansible.builtin.include_vars: ../vars/vpc_rules.yml
+
+    - name: ensure workshop folder {{ ec2_name_prefix }} exists
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/{{ ec2_name_prefix }}"
+        state: directory
+
+    ## build network elements, security groups and key pair
+    - ansible.builtin.include_role:
+        name: ../../roles/aws_resources

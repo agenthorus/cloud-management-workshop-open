@@ -1,0 +1,47 @@
+---
+- name: Create OCPVIRT VM 
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  collections:
+    - redhat.openshift_virtualization
+    - kubernetes.core
+    - redhat.openshift
+ 
+  vars_files:
+    - ../vault/secrets.yml
+
+  vars:
+    
+    v_change_request_number: CHG0030005
+    v_ocp_cluster_api: https://api.cluster-mh5q9.dynamic.redhatworkshops.io:6443
+    v_vm_namespace: mina
+    v_vm_name: minavm2
+    v_vm_instancetype: u1.medium
+    v_vm_preference: rhel.9
+    v_vm_datastore: rhel9
+    v_vm_os_disk_size: 30
+    v_vm_location: Australia
+    v_lcy_environment: Production
+    v_vm_label: demo
+
+#  vars:
+#    v_ocp_cluster_api: https://api.cluster-4tj5d.dynamic.redhatworkshops.io:6443
+#    v_change_request_number: CHG0030005
+#    v_vm_name: minatest01
+#    v_vm_namespace: mina
+#    v_vm_label: cbademo
+#    v_vm_instancetype: u1.large
+#    v_vm_preference: rhel.9
+#    v_vm_datastore: rhel9
+#    v_vm_os_disk_size: '30'
+#    v_vm_location: Australia
+#    v_lcy_environment: Production
+
+  tasks:
+
+    - name: Create VM on OCP cluster
+      ansible.builtin.include_role:
+        name: "../roles/ocpvirt-manage"
+        tasks_from: 01-create-vm-rhel.yml

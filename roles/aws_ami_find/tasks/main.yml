@@ -1,0 +1,14 @@
+---
+- name: find ami for rhel node
+  ec2_ami_info:
+    region: "{{ ec2_region }}"
+    owners: "{{ ec2_info[aws_host_os].owners }}"
+    filters:
+      name: "{{ ec2_info[aws_host_os].filter }}"
+      architecture: "{{ ec2_info[aws_host_os].architecture }}"
+  register: amis
+
+- name: save ami for rhel node
+  set_fact:
+    node_ami_ec2: >
+      {{ amis.images | selectattr('name', 'defined') | sort(attribute='name') | last }}

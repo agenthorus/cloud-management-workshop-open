@@ -1,0 +1,47 @@
+---
+workshop_type: "cloud_management"
+workshop_dns_zone: "rhdemo.io"
+dns_type: aws
+aws_user: admin
+ec2_name_prefix: rh
+ec2_region: ap-southeast-2
+ec2_wait: true
+# need to circle back and fix this for teardown - sean
+ec2_az: "{{ec2_region}}a"
+ec2_subnet: "172.16.0.0/16"
+ec2_subnet2: "172.17.0.0/16"
+ec2_network_vpc2: "172.18.0.0/16"
+ssh_port: 22
+
+ec2_vpc_id: vpc-0bce6dffa84d49bf2
+ec2_security_group: rh-insecure_all
+ec2_vpc_subnet_id: subnet-03e92ca59043512fb
+ec2_vpc_subnet2_id: subnet-00202a4885118d8e5
+
+## Instances Data 
+ec2_info:
+  'win2022':
+    owners: 801119661308
+    filter: '*Windows_Server-2022-English-Full-Base*'
+    size: m5.xlarge
+    username: Administrator
+    disk_volume_type: gp3
+    disk_space: 30
+    disk_iops: 3000
+    disk_throughput: 125
+    architecture: x86_64
+  'rhel9':
+    owners: 309956199498
+    size: t3a.medium
+    os_type: linux
+    disk_volume_type: gp3
+    disk_space: 10
+    disk_iops: 3000
+    disk_throughput: 125
+    architecture: x86_64
+    filter: 'RHEL-9*HVM-*Hourly*'
+    username: ec2-user
+
+## Misc
+ansible_async_dir: "/tmp/.ansible_async"
+
