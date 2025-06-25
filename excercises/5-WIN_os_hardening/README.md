@@ -46,7 +46,7 @@ Create a new Job Template with the following parameters:
 
 * Credential: 
 
-  * RHEL SSH Creds - AWS 
+  * Windows WinRM Creds - AWS 
 
   * Workshop Vault Credential
 
