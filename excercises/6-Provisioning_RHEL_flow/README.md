@@ -71,7 +71,7 @@ Create a new Workflow Job Template with the following parameters:
 * Extra variables (Do not forget to you your username provided)
     ```yaml
     v_instance_count: 1
-    student_name: mina
+    student_name: *\<your username\>*
     aws_host_os: rhel9
     ```
 *  Notice that now we are moving all extra vars to Workflow Level to have highest precedence .. and notice how we will leverage `prompt_on_launch` that we set on some JTs so we can re-use our automation code
